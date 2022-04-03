@@ -9,28 +9,46 @@ const sequelize = new Sequelize('database', 'username', 'password', {
     storage: 'database.sqlite',
 });
 
-const PreGameOdds = require('./models/preGameOdds.js')(sequelize);
+const PreGameOdds = require('./models/preGameOdd.js')(sequelize);
+const Picks = require('./models/pick')(sequelize);
 
 async function main() {
-    console.log(mlbApiKey);
     const dataApi = new MLBv3OddsClient(mlbApiKey);
-    const data = await dataApi.getPreGameOddsByDatePromise('2021-08-08'); //..getBettingEventsByDatePromise('2021-05-05');
+    const data = await dataApi.getPreGameOddsByDatePromise('2021-09-08');
     const obj = JSON.parse(data);
 
     obj.forEach(element => {
-        const sportsbook = element.PregameOdds[0];
+        console.log(element)
+        const sportsbooks = element.PregameOdds;
+        const sportsbook = sportsbooks.find(element => element.SportsbookId === 7);
         const preGameOddsObj = {
             gameId: element.GameId,
+            day: element.Day,
+            dateTime: element.DateTime,
             season: element.Season,
             seasonType: element.SeasonType,
+            status: element.Status,
             awayTeamName: element.AwayTeamName,
             homeTeamName: element.HomeTeamName,
-            awayMonyLine: sportsbook.AwayMoneyLine,
-            homeMoneyLine: sportsbook.HomeMoneyLine
+            homeTeamScore: element.HomeTeamScore,
+            awayTeamScore: element.AwayTeamScore,
+            totalScore: element.TotalScore,
+            awayMoneyLine: sportsbook.AwayMoneyLine,
+            homeMoneyLine: sportsbook.HomeMoneyLine,
+            overUnder: sportsbook.OverUnder,
+            overPayout: sportsbook.OverPayout,
+            underPayout: sportsbook.UnderPayout
         };
-        PreGameOdds.upsert(preGameOddsObj);
-        console.log(preGameOddsObj);
+        PreGameOdds.create(preGameOddsObj);
     });
+
+    // await Picks.create({
+    //     hash: 'blah',
+    //     user: '406637022694998017',
+    //     side: 'away',
+    //     odds: 63033,
+    //     preGameOdd: 63033,
+    // });
 }
 
 if (require.main === module) {

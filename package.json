@@ -4,6 +4,10 @@
     "description": "",
     "main": "index.js",
     "scripts": {
+        "start": "node index.js",
+        "deploy-commands": "node deploy-commands.js",
+        "refresh-db": "node dbInit.js && node sports-data-io/sportsDataIo.js && node deploy-commands.js",
+        "refresh-db-force": "node dbInit.js -f && node sports-data-io/sportsDataIo.js && node deploy-commands.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "author": "bbroeking456 <bbroeking456@gmail.com>",
@@ -11,9 +15,11 @@
     "dependencies": {
         "@discordjs/builders": "^0.12.0",
         "@discordjs/rest": "^0.3.0",
+        "axios": "^0.26.1",
         "discord-api-types": "^0.30.0",
         "discord.js": "^13.6.0",
         "fantasydata-node-client": "^1.5.3",
+        "moment": "^2.29.1",
         "node-fetch": "^2.6.7",
         "sequelize": "^6.17.0",
         "sqlite3": "^5.0.2"

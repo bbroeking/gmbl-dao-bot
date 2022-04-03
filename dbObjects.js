@@ -7,8 +7,20 @@ const sequelize = new Sequelize('database', 'username', 'password', {
     storage: 'database.sqlite',
 });
 
-const PreGameOdds = require('./sports-data-io/models/preGameOdds')(sequelize);
+const PreGameOdds = require('./sports-data-io/models/preGameOdd')(sequelize);
+const Picks = require('./sports-data-io/models/pick')(sequelize);
+
+PreGameOdds.hasMany(Picks, {
+    foreignKey: 'odds',
+    sourceKey: 'gameId'
+});
+
+Picks.belongsTo(PreGameOdds, {
+    foreignKey: 'odds',
+    targetKey: 'gameId'
+});
 
 module.exports = {
-    PreGameOdds
+    PreGameOdds,
+    Picks
 }
