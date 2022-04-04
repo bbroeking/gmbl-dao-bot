@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageEmbed } = require('discord.js');
-const { Picks, PreGameOdds } = require('../dbObjects.js');
+const { Picks, PreGameOdds, User } = require('../dbObjects.js');
 const crypto = require('crypto');
 
 module.exports = {
@@ -22,32 +22,48 @@ module.exports = {
             .addChoice('Under', 'under')
         ),
     async execute(interaction) {
-        const gameid = interaction.options.getString('gameid');
-        const side = interaction.options.getString('side');
-        const hash = crypto.createHash('md5').update(`${gameid}${side}`).digest('hex');
         await interaction.deferReply('locking pick... ');
 
-        // avoid duplicate locks
-        const existing = await Picks.findOne({ where: { hash } });
-        if (existing)
-            return interaction.editReply('you have already registered this lock');
+        try {
+            const gameid = interaction.options.getString('gameid');
+            const side = interaction.options.getString('side');
+            const hash = crypto.createHash('md5').update(`${gameid}${side}`).digest('hex');
 
-        const preGameOdd = await PreGameOdds.findOne({ where: { gameId: gameid } });
-        await Picks.create({
-            hash,
-            user: interaction.user.id,
-            side,
-            odds: preGameOdd.gameId,
-        });
-        console.log(preGameOdd);
-        const line = side == 'home' ? preGameOdd.homeMoneyLine : side === 'away' ? preGameOdd.awayMoneyLine : side === 'over' ? preGameOdd.overPayout : preGameOdd.underPayout;
-        const embed = new MessageEmbed()
-            .setColor('#EFFF00')
-            .setTitle('Lock 🔒')
-            .setAuthor({ name: 'MLB Locks Challenge', iconURL: 'https://m.media-amazon.com/images/I/71+qr9FmOBL._AC_SL1200_.jpg', url: 'https://gmbldao.io' })
-            .addFields({ name: 'GameId', value: gameid, inline: true }, { name: 'Matchup', value: `${preGameOdd.awayTeamName}@${preGameOdd.homeTeamName} | ${preGameOdd.overUnder} O/U` }, { name: 'Line', value: `${line}`, inline: true }, { name: 'Side', value: side, inline: true }, )
-            .setThumbnail('https://static01.nyt.com/images/2015/05/30/sports/30dior-2-obit/30dior-2-obit-jumbo.jpg')
-            .setTimestamp()
-        return interaction.editReply({ embeds: [embed] });
+            // create user if it doesn't exist
+            const discordId = interaction.user.id;
+            const user = await User.findOne({ where: { discordId } });
+            if (!user) {
+                await User.create({
+                    discordId,
+                    tag: interaction.user.tag
+                });
+            }
+            // avoid duplicate locks
+            const existing = await Picks.findOne({ where: { hash } });
+            if (existing)
+                return interaction.editReply('you have already registered this lock');
+
+            const preGameOdd = await PreGameOdds.findOne({ where: { gameId: gameid } });
+            await Picks.create({
+                hash,
+                userId: discordId,
+                side,
+                odds: preGameOdd.gameId,
+            });
+            console.log(preGameOdd);
+            const line = side == 'home' ? preGameOdd.homeMoneyLine : side === 'away' ? preGameOdd.awayMoneyLine : side === 'over' ? preGameOdd.overPayout : preGameOdd.underPayout;
+            const embed = new MessageEmbed()
+                .setColor('#EFFF00')
+                .setTitle('Lock 🔒')
+                .setAuthor({ name: 'MLB Locks Challenge', iconURL: 'https://m.media-amazon.com/images/I/71+qr9FmOBL._AC_SL1200_.jpg', url: 'https://gmbldao.io' })
+                .addFields({ name: 'GameId', value: gameid, inline: true }, { name: 'Matchup', value: `${preGameOdd.awayTeamName}@${preGameOdd.homeTeamName} | ${preGameOdd.overUnder} O/U` }, { name: 'Line', value: `${line}`, inline: true }, { name: 'Side', value: side, inline: true }, )
+                .setThumbnail('https://static01.nyt.com/images/2015/05/30/sports/30dior-2-obit/30dior-2-obit-jumbo.jpg')
+                .setTimestamp()
+            return interaction.editReply({ embeds: [embed] });
+        } catch (e) {
+            console.log(e);
+            interaction.editReply('An error occurred please try again later');
+        }
+
     }
 };

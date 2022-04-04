@@ -9,7 +9,10 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 
 const PreGameOdds = require('./sports-data-io/models/preGameOdd')(sequelize);
 const Picks = require('./sports-data-io/models/pick')(sequelize);
+const Leaderboards = require('./sports-data-io/models/leaderboard')(sequelize);
+const User = require('./sports-data-io/models/user')(sequelize);
 
+// PreGameOdds used in many Picks
 PreGameOdds.hasMany(Picks, {
     foreignKey: 'odds',
     sourceKey: 'gameId'
@@ -20,7 +23,31 @@ Picks.belongsTo(PreGameOdds, {
     targetKey: 'gameId'
 });
 
+// User has many Picks
+User.hasMany(Picks, {
+    foreignKey: 'userId',
+    sourceKey: 'discordId'
+});
+
+Picks.belongsTo(User, {
+    foreignKey: 'userId',
+    targetKey: 'discordId'
+});
+
+// Leaderboard has many Users
+User.hasMany(Leaderboards, {
+    foreignKey: 'discordId',
+    sourceKey: 'discordId'
+});
+
+Leaderboards.belongsTo(User, {
+    foreignKey: 'discordId',
+    targetKey: 'discordId'
+})
+
 module.exports = {
     PreGameOdds,
-    Picks
+    Picks,
+    Leaderboards,
+    User
 }

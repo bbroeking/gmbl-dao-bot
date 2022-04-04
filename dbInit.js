@@ -9,6 +9,8 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 
 const PreGameOdds = require('./sports-data-io/models/preGameOdd.js')(sequelize);
 const Picks = require('./sports-data-io/models/pick')(sequelize);
+const Leaderboards = require('./sports-data-io/models/leaderboard')(sequelize);
+const Users = require('./sports-data-io/models/user')(sequelize);
 
 const force = process.argv.includes('--force') || process.argv.includes('-f');
 

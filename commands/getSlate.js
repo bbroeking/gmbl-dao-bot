@@ -9,31 +9,37 @@ module.exports = {
         .setDescription('Get the MLB slate for the day')
         .addStringOption(option => option.setName('date').setDescription('Enter a date other than today in the format- YYYY-mm-dd')),
     async execute(interaction) {
-        await interaction.deferReply();
-        const date = interaction.options.getString('date');
-        if (!date) {
-            // grab todays lines
+        await interaction.deferReply('fetching slate... ');
+        try {
+            const date = interaction.options.getString('date');
+            if (!date) {
+                // grab todays lines
+                const items = await PreGameOdds.findAll({
+                    where: {
+                        day: moment().startOf('day').format('YYYY-MM-DDTHH:mm:ss')
+                    }
+                });
+                const reply = replyBuilder(items);
+                return interaction.editReply(reply);
+            }
+
+            const regex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/
+            const regexDate = date.match(regex);
+            if (!regexDate)
+                return interaction.editReply('date was in the wrong format, please try again with YYYY-mm-dd');
             const items = await PreGameOdds.findAll({
                 where: {
-                    day: moment().startOf('day').format('YYYY-MM-DDTHH:mm:ss')
+                    day: moment(date).startOf('day').format('YYYY-MM-DDTHH:mm:ss')
                 }
             });
-            const reply = replyBuilder(items);
+
+            const reply = replyBuilder(items, date);
             return interaction.editReply(reply);
+
+        } catch (e) {
+            console.log(e);
+            return interaction.editReply('An error occurred, please try again');
         }
-
-        const regex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/
-        const regexDate = date.match(regex);
-        if (!regexDate)
-            return interaction.editReply('date was in the wrong format, please try again with YYYY-mm-dd');
-        const items = await PreGameOdds.findAll({
-            where: {
-                day: moment(date).startOf('day').format('YYYY-MM-DDTHH:mm:ss')
-            }
-        });
-
-        const reply = replyBuilder(items, date);
-        return interaction.editReply(reply);
     }
 };
 

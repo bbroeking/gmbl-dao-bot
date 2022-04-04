@@ -13,7 +13,7 @@ const markets = 'h2h,totals' // h2h | spreads | totals. Multiple can be specifie
 
 const oddsFormat = 'american' // decimal | american
 
-const dateFormat = 'iso' // iso | unix
+const dateFormat = 'unix' // iso | unix
 
 /*
     First get a list of in-season sports

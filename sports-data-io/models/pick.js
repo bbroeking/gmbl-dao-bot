@@ -6,7 +6,7 @@ module.exports = (sequelize) => {
             type: Sequelize.STRING,
             unique: true,
         },
-        user: Sequelize.STRING,
+        userId: Sequelize.STRING,
         side: Sequelize.STRING,
         odds: Sequelize.STRING
     });
