@@ -64,4 +64,4 @@ axios.get(`https://api.the-odds-api.com/v4/sports/${sportKey}/odds`, {
     .catch(error => {
         console.log('Error status', error.response.status)
         console.log(error.response.data)
-    })
+    });
