@@ -45,7 +45,7 @@ module.exports = {
                         [Op.gt]: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
                     },
                 },
-                include: ["preGameOdd", "user"],
+                include: ["preGameOdd", "user", "score"],
             });
 
             const groupedPastWeek = _.groupBy(pastWeek, "user");
@@ -56,10 +56,10 @@ module.exports = {
                 const winningPicks = _.filter(user, (pick) => {
                     if (!pick.preGameOdd) return false;
 
-                    const homeWin = pick.preGameOdd.homeTeamScore > pick.preGameOdd.awayTeamScore && pick.side === 'home';
-                    const roadWin = pick.preGameOdd.awayTeamScore > pick.preGameOdd.homeTeamScore && pick.side === 'away';
-                    const overWin = pick.preGameOdd.totalScore > pick.preGameOdd.overUnder && pick.side === 'over';
-                    const underWin = pick.preGameOdd.totalScore < pick.preGameOdd.overUnder && pick.side === 'under';
+                    const homeWin = pick.score.homeTeamScore > pick.score.awayTeamScore && pick.side === 'home';
+                    const roadWin = pick.score.awayTeamScore > pick.score.homeTeamScore && pick.side === 'away';
+                    const overWin = pick.score.totalScore > pick.score.overUnder && pick.side === 'over';
+                    const underWin = pick.score.totalScore < pick.score.overUnder && pick.side === 'under';
                     return homeWin || roadWin || overWin || underWin;
                 });
 

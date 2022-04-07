@@ -6,8 +6,9 @@
     "scripts": {
         "start": "node index.js",
         "deploy-commands": "node deploy-commands.js",
+        "init-db": "node dbInit.js -f && node odds-api/oddsApiPopulate.js && node deploy-commands.js",
         "refresh-db": "node dbInit.js && node sports-data-io/sportsDataIo.js && node deploy-commands.js",
-        "refresh-db-force": "node dbInit.js -f && node sports-data-io/sportsDataIo.js && node deploy-commands.js",
+        "refresh-db-sports-io": "node dbInit.js -f && node sports-data-io/sportsDataIo.js && node deploy-commands.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "author": "bbroeking456 <bbroeking456@gmail.com>",

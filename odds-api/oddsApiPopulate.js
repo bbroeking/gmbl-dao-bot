@@ -1,6 +1,9 @@
 const { oddsApi } = require('../config.json');
 const Sequelize = require('sequelize');
 const OddsClient = require('./oddsClient');
+const { Scores } = require('../dbObjects');
+const _ = require('lodash');
+const moment = require('moment');
 
 const sequelize = new Sequelize('database', 'username', 'password', {
     host: 'localhost',
@@ -20,84 +23,110 @@ async function main() {
     const regions = 'us' // uk | us | eu | au. Multiple can be specified if comma delimited
     const markets = 'h2h,totals' // h2h | spreads | totals. Multiple can be specified if comma delimited
     const oddsFormat = 'american' // decimal | american
-    const dateFormat = 'iso' // iso | unix
+    const dateFormat = 'unix' // iso | unix
 
     const odds = await oddsClient.getOdds(sportKey, regions, markets, oddsFormat, dateFormat);
+    const scores = await oddsClient.getScores(sportKey, 1, dateFormat);
+    if (!scores) {
+        console.log('could not get scores');
+        scores = [];
+    }
+    if (!odds) {
+        console.log('could not get odds');
+        odds = [];
+    }
 
-    if (!odds) return;
+    scores.forEach(score => {
+        let parsedHome, parsedAway, total;
+        if (score.completed) {
+            const homeScore = score.scores && score.scores.find(item => item.name === score.home_team);
+            const awayScore = score.scores && score.scores.find(item => item.name === score.away_team);
+            parsedHome = parseInt(homeScore.score);
+            parsedAway = parseInt(awayScore.score);
+            total = parsedHome + parsedAway;
+        }
+        const scoresEntry = {
+            gameId: score.id,
+            dateTime: score.commence_time,
+            completed: score.completed,
+            homeTeamName: score.home_team,
+            awayTeamName: score.away_team,
+            homeTeamScore: score.completed ? parsedHome : 0,
+            awayTeamScore: score.completed ? parsedAway : 0,
+            totalScore: score.completed ? total : 0,
+            lastUpdated: score.completed ? score.last_update : null
+        };
+        Scores.upsert(scoresEntry);
+    })
 
     odds.forEach(element => {
-        const bookmaker = element.bookmakers[0];
-        const markets = bookmaker.markets;
-        const h2h = markets.find(element => element.key === 'h2h');
-        const totals = markets.find(element => element.key === 'totals');
+        const bookmakers = element.bookmakers;
+        const books = bookmakers.filter(({ markets }) => markets.length == 2); // markets with 2 have both ml & total
 
-        let awayML, homeML, total;
-        if (h2h) {
-            const awayOutcome = h2h.outcomes.find(outcomes => outcomes.name === element.away_team);
-            awayML = awayOutcome.price;
-            const homeOutcome = h2h.outcomes.find(outcomes => outcomes.name === element.home_team);
-            homeML = homeOutcome.price;
+        if (books.length == 0) return;
+        const markets = books[0].markets
+
+        let awayML, homeML, total, overPayout, underPayout;
+        if (books && markets) {
+            const market1 = markets[0];
+            const market2 = markets[1];
+
+            if (market1.key === 'h2h') {
+                if (market1.outcomes[0].name === element.away_team) {
+                    awayML = market1.outcomes[0].price;
+                    homeML = market1.outcomes[1].price;
+                } else {
+                    awayML = market1.outcomes[1].price;
+                    homeML = market1.outcomes[0].price;
+                }
+
+                // handle totals
+                if (market2.outcomes[0].name === "Over") {
+                    total = market2.outcomes[0].point;
+                    overPayout = market2.outcomes[0].price;
+                    underPayout = market2.outcomes[1].price
+                } else {
+                    total = market2.outcomes[0].point;
+                    underPayout = market2.outcomes[0].price;
+                    overPayout = market2.outcomes[1].price
+                }
+            } else {
+                if (market2.outcomes[0].name === element.away_team) {
+                    awayML = market2.outcomes[0].price;
+                    homeML = market2.outcomes[1].price;
+                } else {
+                    awayML = market2.outcomes[1].price;
+                    homeML = market2.outcomes[0].price;
+                }
+
+                // handle totals
+                if (market2.outcomes[0].name === "Over") {
+                    total = market2.outcomes[0].point;
+                    overPayout = market2.outcomes[0].price;
+                    underPayout = market2.outcomes[1].price
+                } else {
+                    total = market2.outcomes[0].point;
+                    underPayout = market2.outcomes[0].price;
+                    overPayout = market2.outcomes[1].price
+                }
+            }
         }
 
-        if (totals || !totals) {
-            total = 9;
-        }
-        awayML = bookmaker.markets
         const oddsEntry = {
             gameId: element.id,
             dateTime: element.commence_time,
             awayTeamName: element.away_team,
             homeTeamName: element.home_team,
-
             awayMoneyLine: awayML,
             homeMoneyLine: homeML,
             total: total,
-            // overPayout: sportsbook.OverPayout,
-            // underPayout: sportsbook.UnderPayout
+            overPayout,
+            underPayout,
         };
-        console.log(oddsEntry);
+
+        PreGameOdds.upsert(oddsEntry);
     });
 }
-
-// async function main() {
-//     const dataApi = new MLBv3OddsClient(mlbApiKey);
-//     const data = await dataApi.getPreGameOddsByDatePromise('2021-09-08');
-//     const obj = JSON.parse(data);
-
-//     obj.forEach(element => {
-//         console.log(element)
-//         const sportsbooks = element.PregameOdds;
-//         const sportsbook = sportsbooks.find(element => element.SportsbookId === 7);
-//         const preGameOddsObj = {
-//             gameId: element.GameId,
-//             day: element.Day,
-//             dateTime: element.DateTime,
-//             season: element.Season,
-//             seasonType: element.SeasonType,
-//             status: element.Status,
-//             awayTeamName: element.AwayTeamName,
-//             homeTeamName: element.HomeTeamName,
-//             homeTeamScore: element.HomeTeamScore,
-//             awayTeamScore: element.AwayTeamScore,
-//             totalScore: element.TotalScore,
-//             awayMoneyLine: sportsbook.AwayMoneyLine,
-//             homeMoneyLine: sportsbook.HomeMoneyLine,
-//             overUnder: sportsbook.OverUnder,
-//             overPayout: sportsbook.OverPayout,
-//             underPayout: sportsbook.UnderPayout
-//         };
-//         PreGameOdds.create(preGameOddsObj);
-//     });
-
-//     // await Picks.create({
-//     //     hash: 'blah',
-//     //     user: '406637022694998017',
-//     //     side: 'away',
-//     //     odds: 63033,
-//     //     preGameOdd: 63033,
-//     // });
-// }
 
 if (require.main === module) {
     main();

@@ -14,31 +14,36 @@ module.exports = {
                     where: {
                         userId: interaction.user.id,
                     },
-                    include: ["preGameOdd"],
+                    include: ["preGameOdd", "score"],
                     limit: 25
                 });
-                if (!lockedPicks)
+
+                const completedPicks = lockedPicks.filter(pick => pick.score.completed);
+
+                console.log(completedPicks[0].score);
+
+                if (!completedPicks)
                     return interaction.editReply('Could not find any recent picks');
 
-                const wins = lockedPicks.filter((pick) => {
+                const wins = completedPicks.filter((pick) => {
                     if (!pick.preGameOdd) return false;
-                    const homeWin = pick.preGameOdd.homeTeamScore > pick.preGameOdd.awayTeamScore && pick.side === 'home';
-                    const roadWin = pick.preGameOdd.awayTeamScore > pick.preGameOdd.homeTeamScore && pick.side === 'away';
-                    const overWin = pick.preGameOdd.totalScore > pick.preGameOdd.overUnder && pick.side === 'over';
-                    const underWin = pick.preGameOdd.totalScore < pick.preGameOdd.overUnder && pick.side === 'under';
+                    const homeWin = pick.score.homeTeamScore > pick.score.awayTeamScore && pick.side === 'home';
+                    const roadWin = pick.score.awayTeamScore > pick.score.homeTeamScore && pick.side === 'away';
+                    const overWin = pick.score.totalScore > pick.score.overUnder && pick.side === 'over';
+                    const underWin = pick.score.totalScore < pick.score.overUnder && pick.side === 'under';
                     return homeWin || roadWin || overWin || underWin;
                 });
 
-                const picks = lockedPicks.map(i => {
+                const picks = completedPicks.map(i => {
                             const gameId = `[${i?.preGameOdd?.gameId}]`;
                             const result = `${_.find(wins, { hash: i.hash }) ? '💰' : '❌'}`;
                             if (i.side === 'home' || i.side === 'away') {
-                                const moneylinePosition = `${i.side == 'home' ? i?.preGameOdd?.homeTeamName : i?.preGameOdd?.awayTeamName} ${i.side == 'home' ? `${i?.preGameOdd?.homeTeamName}(${i?.preGameOdd.homeTeamScore}) vs ${i?.preGameOdd?.awayTeamName}(${i?.preGameOdd.awayTeamScore})` : `${i?.preGameOdd?.awayTeamName}(${i?.preGameOdd.awayTeamScore})@${i?.preGameOdd?.homeTeamName}(${i?.preGameOdd.homeTeamScore})`}`;
-                    return `${gameId} ${moneylinePosition} ${result}`
-                } else {
-                    const overUnderPosition = `${i.side == 'over' ? `O${i?.preGameOdd?.overUnder}` : `U${i?.preGameOdd?.overUnder}`} ${i?.preGameOdd?.awayTeamName}(${i?.preGameOdd?.awayTeamScore})@${i?.preGameOdd?.homeTeamName}(${i?.preGameOdd?.homeTeamScore})`
-                    return `${gameId} ${overUnderPosition} ${result}`
-                }
+                                const moneylinePosition = `Pick: ${i.side == 'home' ? i?.preGameOdd?.homeTeamName : i?.preGameOdd?.awayTeamName}\n ${i.side == 'home' ? `${i?.preGameOdd?.homeTeamName}(${i?.score.homeTeamScore}) vs ${i?.preGameOdd?.awayTeamName}(${i?.score.awayTeamScore})` : `${i?.preGameOdd?.awayTeamName}(${i?.score.awayTeamScore})@${i?.preGameOdd?.homeTeamName}(${i?.score.homeTeamScore})`}`;
+                                return `${gameId} ${moneylinePosition}${result}`
+                            } else {
+                                const overUnderPosition = `Pick: ${i.side == 'over' ? `O ${i?.preGameOdd?.total}` : `U ${i?.preGameOdd?.total}`}\n ${i?.preGameOdd?.awayTeamName}(${i?.score?.awayTeamScore})@${i?.preGameOdd?.homeTeamName}(${i?.score?.homeTeamScore})`
+                                return `${gameId} ${overUnderPosition}${result}`
+                            }
             }).join('\n');
 
             return interaction.editReply(Formatters.codeBlock(picks));

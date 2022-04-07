@@ -1,17 +1,17 @@
 const Sequelize = require('sequelize');
 
 module.exports = (sequelize) => {
-    return sequelize.define('preGameOdd', {
+    return sequelize.define('score', {
         gameId: {
             type: Sequelize.NUMBER,
         },
         dateTime: Sequelize.NUMBER,
+        completed: Sequelize.STRING,
+        homeTeamScore: Sequelize.NUMBER,
+        awayTeamScore: Sequelize.NUMBER,
+        totalScore: Sequelize.NUMBER,
         awayTeamName: Sequelize.STRING,
         homeTeamName: Sequelize.STRING,
-        awayMoneyLine: Sequelize.NUMBER,
-        homeMoneyLine: Sequelize.NUMBER,
-        total: Sequelize.NUMBER,
-        overPayout: Sequelize.NUMBER,
-        underPayout: Sequelize.NUMBER
+        lastUpdated: Sequelize.STRING
     });
 }

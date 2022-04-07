@@ -72,7 +72,7 @@ class OddsClient {
         daysFrom,
         dateFormat
     ) {
-        axios.get(`https://api.the-odds-api.com/v4/sports/${sportKey}/scores/`, {
+        return axios.get(`https://api.the-odds-api.com/v4/sports/${sportKey}/scores/`, {
                 params: {
                     apiKey: this.apiKey,
                     daysFrom,
@@ -89,6 +89,7 @@ class OddsClient {
                 console.log('Remaining requests', response.headers['x-requests-remaining'])
                 console.log('Used requests', response.headers['x-requests-used'])
 
+                return response.data;
             })
             .catch(error => {
                 console.log('Error status', error.response.status)

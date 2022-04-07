@@ -33,6 +33,7 @@ module.exports = {
             const discordId = interaction.user.id;
             const user = await User.findOne({ where: { discordId } });
             if (!user) {
+                console.log(`creating discordId for ${interaction.user.tag}`);
                 await User.create({
                     discordId,
                     tag: interaction.user.tag
@@ -44,11 +45,16 @@ module.exports = {
                 return interaction.editReply('you have already registered this lock');
 
             const preGameOdd = await PreGameOdds.findOne({ where: { gameId: gameid } });
+
+            if (!preGameOdd || !preGameOdd.gameId)
+                return interaction.editReply('could not find provided gameId');
+
             await Picks.create({
                 hash,
                 userId: discordId,
                 side,
                 odds: preGameOdd.gameId,
+                scoring: preGameOdd.gameId // score should be same game id
             });
             console.log(preGameOdd);
             const line = side == 'home' ? preGameOdd.homeMoneyLine : side === 'away' ? preGameOdd.awayMoneyLine : side === 'over' ? preGameOdd.overPayout : preGameOdd.underPayout;
@@ -56,7 +62,7 @@ module.exports = {
                 .setColor('#EFFF00')
                 .setTitle('Lock 🔒')
                 .setAuthor({ name: 'MLB Locks Challenge', iconURL: 'https://m.media-amazon.com/images/I/71+qr9FmOBL._AC_SL1200_.jpg', url: 'https://gmbldao.io' })
-                .addFields({ name: 'GameId', value: gameid, inline: true }, { name: 'Matchup', value: `${preGameOdd.awayTeamName}@${preGameOdd.homeTeamName} | ${preGameOdd.overUnder} O/U` }, { name: 'Line', value: `${line}`, inline: true }, { name: 'Side', value: side, inline: true }, )
+                .addFields({ name: 'GameId', value: gameid, inline: true }, { name: 'Matchup', value: `${preGameOdd.awayTeamName}@${preGameOdd.homeTeamName} | ${preGameOdd.total} O/U` }, { name: 'Line', value: `${line}`, inline: true }, { name: 'Side', value: side, inline: true }, )
                 .setThumbnail('https://static01.nyt.com/images/2015/05/30/sports/30dior-2-obit/30dior-2-obit-jumbo.jpg')
                 .setTimestamp()
             return interaction.editReply({ embeds: [embed] });

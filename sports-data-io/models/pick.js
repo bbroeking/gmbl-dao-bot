@@ -8,6 +8,7 @@ module.exports = (sequelize) => {
         },
         userId: Sequelize.STRING,
         side: Sequelize.STRING,
-        odds: Sequelize.STRING
+        odds: Sequelize.STRING,
+        scoring: Sequelize.STRING
     });
 }

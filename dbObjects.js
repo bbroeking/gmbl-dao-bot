@@ -11,6 +11,7 @@ const PreGameOdds = require('./sports-data-io/models/preGameOdd')(sequelize);
 const Picks = require('./sports-data-io/models/pick')(sequelize);
 const Leaderboards = require('./sports-data-io/models/leaderboard')(sequelize);
 const User = require('./sports-data-io/models/user')(sequelize);
+const Scores = require('./sports-data-io/models/score')(sequelize);
 
 // PreGameOdds used in many Picks
 PreGameOdds.hasMany(Picks, {
@@ -20,6 +21,17 @@ PreGameOdds.hasMany(Picks, {
 
 Picks.belongsTo(PreGameOdds, {
     foreignKey: 'odds',
+    targetKey: 'gameId'
+});
+
+// Picks have scores
+Scores.hasMany(Picks, {
+    foreignKey: 'scoring',
+    sourceKey: 'gameId'
+});
+
+Picks.belongsTo(Scores, {
+    foreignKey: 'scoring',
     targetKey: 'gameId'
 });
 
@@ -43,11 +55,24 @@ User.hasMany(Leaderboards, {
 Leaderboards.belongsTo(User, {
     foreignKey: 'discordId',
     targetKey: 'discordId'
-})
+});
+
+// odds and scores are 1:1 correlated
+PreGameOdds.hasOne(Scores, {
+    foreignKey: 'gameId',
+    sourceKey: 'gameId'
+});
+
+Scores.belongsTo(PreGameOdds, {
+    foreignKey: 'gameId',
+    targetKey: 'gameId'
+});
+
 
 module.exports = {
     PreGameOdds,
     Picks,
     Leaderboards,
-    User
+    User,
+    Scores
 }

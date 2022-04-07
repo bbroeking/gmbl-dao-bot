@@ -18,16 +18,16 @@ module.exports = {
                             [Op.gt]: new Date(Date.now() - 24 * 60 * 60 * 1000)
                         }
                     },
-                    include: ["preGameOdd"],
+                    include: ["preGameOdd", "score"],
                     limit: 3
                 });
 
                 const wins = lockedPicks.filter((pick) => {
-                    if (!pick.preGameOdd) return false;
-                    const homeWin = pick.preGameOdd.homeTeamScore > pick.preGameOdd.awayTeamScore && pick.side === 'home';
-                    const roadWin = pick.preGameOdd.awayTeamScore > pick.preGameOdd.homeTeamScore && pick.side === 'away';
-                    const overWin = pick.preGameOdd.totalScore > pick.preGameOdd.overUnder && pick.side === 'over';
-                    const underWin = pick.preGameOdd.totalScore < pick.preGameOdd.overUnder && pick.side === 'under';
+                    if (!pick.score) return false;
+                    const homeWin = pick.score.homeTeamScore > pick.score.awayTeamScore && pick.side === 'home';
+                    const roadWin = pick.score.awayTeamScore > pick.score.homeTeamScore && pick.side === 'away';
+                    const overWin = pick.score.totalScore > pick.score.overUnder && pick.side === 'over';
+                    const underWin = pick.score.totalScore < pick.score.overUnder && pick.side === 'under';
                     return homeWin || roadWin || overWin || underWin;
                 });
 
@@ -35,11 +35,11 @@ module.exports = {
                             const gameId = `[${i?.preGameOdd?.gameId}]`;
                             const result = `${_.find(wins, { hash: i.hash }) ? '💰' : '❌'}`;
                             if (i.side === 'home' || i.side === 'away') {
-                                const moneylinePosition = `${i.side == 'home' ? i?.preGameOdd?.homeTeamName : i?.preGameOdd?.awayTeamName} ${i.side == 'home' ? `${i?.preGameOdd?.homeTeamName}(${i?.preGameOdd.homeTeamScore}) vs ${i?.preGameOdd?.awayTeamName}(${i?.preGameOdd.awayTeamScore})` : `${i?.preGameOdd?.awayTeamName}(${i?.preGameOdd.awayTeamScore})@${i?.preGameOdd?.homeTeamName}(${i?.preGameOdd.homeTeamScore})`}`;
-                                return `${gameId} ${moneylinePosition} ${result}`
+                                const moneylinePosition = `${i.side == 'home' ? i?.preGameOdd?.homeTeamName : i?.preGameOdd?.awayTeamName}\n ${i.side == 'home' ? `${i?.preGameOdd?.homeTeamName}(${i?.score.homeTeamScore}) vs ${i?.preGameOdd?.awayTeamName}(${i?.score.awayTeamScore})` : `${i?.preGameOdd?.awayTeamName}(${i?.score.awayTeamScore})@${i?.preGameOdd?.homeTeamName}(${i?.score.homeTeamScore})`}`;
+                                return `${gameId} ${moneylinePosition}${result}`
                             } else {
-                                const overUnderPosition = `${i.side == 'over' ? `O${i?.preGameOdd?.overUnder}` : `U${i?.preGameOdd?.overUnder}`} ${i?.preGameOdd?.awayTeamName}(${i?.preGameOdd?.awayTeamScore})@${i?.preGameOdd?.homeTeamName}(${i?.preGameOdd?.homeTeamScore})`
-                                return `${gameId} ${overUnderPosition} ${result}`
+                                const overUnderPosition = `${i.side == 'over' ? `O${i?.preGameOdd?.overUnder}` : `U${i?.preGameOdd?.overUnder}`}\n ${i?.preGameOdd?.awayTeamName}(${i?.score?.awayTeamScore})@${i?.preGameOdd?.homeTeamName}(${i?.score?.homeTeamScore})`
+                                return `${gameId} ${overUnderPosition}${result}`
                             }
                         }).join('\n');
 
