@@ -61,7 +61,8 @@ const replyBuilder = (items, date) => {
     else
         dateString = moment().startOf('day').toLocaleString();
 
-    let lines = items.map(i => `Game No.[${i.gameId}] \n${i.awayTeamName} (${i.awayMoneyLine}) @ ${i.homeTeamName} (${i.homeMoneyLine}) \nOver/Under ${i.total}\n`);
+    const sliced = items.slice(0, 10);
+    let lines = sliced.map(i => `Game No.[${i.gameId}] \n${i.awayTeamName} (${i.awayMoneyLine}) @ ${i.homeTeamName} (${i.homeMoneyLine}) \nOver/Under ${i.total}\n`);
     lines.push(dateString + '\n');
     lines.push('use the Game No. to make picks');
     lines = lines.join('\n');
